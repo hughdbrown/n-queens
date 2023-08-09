@@ -1,6 +1,5 @@
 use std::collections::{
     HashMap,
-    HashSet,
 };
 use crate::utils::{
     Pos,
@@ -8,6 +7,8 @@ use crate::utils::{
     Visited,
     NUM_ROWS,
     NUM_COLS,
+    calc_unattacked,
+    can_cover,
 };
 
 pub enum Placed {
@@ -18,26 +19,28 @@ pub enum Placed {
 pub fn place_queens(
     visited: &mut Visited, // Squares that have been visited. Initially empty.
     sees: &HashMap<Pos, See>, // Rows, columns, and diagonals visible by each square
-    squares: &mut HashSet<Pos>, // 
+    squares: &[Pos], // Squares left that can be occupied by a queen.
 ) -> Placed {
     if visited.pos.len() == (NUM_ROWS as usize) {
         return Placed::Success;
     }
 
-    let v: Vec<Pos> = squares.clone().iter().map(|x| *x).collect::<Vec::<Pos>>();
-    for pos in v.iter() {
-        if let Some(see) = sees.get(pos) {
-            if visited.can_push(see) {
+    let unattacked: Vec<Pos> = calc_unattacked(squares, visited, sees);
+    if can_cover(&unattacked) {
+        for pos in unattacked.iter() {
+            // Get the (row, col, ldiag, rdiag) characteristics of `pos`.
+            if let Some(see) = sees.get(pos) {
+                // Temporarily add `pos` and `see` to `visited`
                 visited.push(pos, see);
-                squares.remove(pos);
-                match place_queens(visited, sees, squares) {
+
+                // And recurse.
+                match place_queens(visited, sees, &unattacked) {
                     Placed::Success => {
                         return Placed::Success;
                     },
                     Placed::Failure => {
                         // Not a good board: backtrack
                         visited.pop();
-                        squares.insert(*pos);
                     },
                 }
             }
@@ -47,7 +50,7 @@ pub fn place_queens(
     Placed::Failure
 }
 
-pub fn dump_board(pos: &Vec<Pos>)
+pub fn dump_board(pos: &[Pos])
 {
     let mut map = [['.'; NUM_COLS as usize]; NUM_ROWS as usize];
     for p in pos.iter() {

@@ -1,6 +1,5 @@
 use std::collections::{
     HashMap,
-    HashSet,
 };
 
 mod queen;
@@ -22,9 +21,9 @@ use utils::{
 fn main() {
     let mut visited: Visited = Visited::new();
     let sees: HashMap<Pos, See> = calc_sees();
-    let mut squares: HashSet<Pos> = calc_squares();
+    let squares: Vec<Pos> = calc_squares();
 
-    match place_queens(&mut visited, &sees, &mut squares) {
+    match place_queens(&mut visited, &sees, &squares) {
         Placed::Success => {
             //println!("{:#?}", visited.pos);
             dump_board(&visited.pos);

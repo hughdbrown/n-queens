@@ -4,10 +4,10 @@ use std::collections::{
     HashSet,
 };
 
-pub const NUM_ROWS: i8 = 8;
+pub const NUM_ROWS: i8 = 14;
 pub const NUM_COLS: i8 = NUM_ROWS;
 
-#[derive(Eq, PartialEq, Debug, Clone, Copy, Hash)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy, Hash, PartialOrd, Ord)]
 pub struct Pos(pub i8, pub i8);
 impl fmt::Display for Pos {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -72,26 +72,24 @@ impl Visited {
         self.ldiags.remove(&see.ldiag);
         self.rdiags.remove(&see.rdiag);
         self.seen.remove(end);
-
-        let end: usize = self.pos.len() - 1;
         self.pos.remove(end);
     }
     pub fn can_push(&self, see: &See) -> bool {
         ! (
-            self.rows.contains(&see.row) || 
-            self.cols.contains(&see.col) || 
+            self.rows.contains(&see.row) ||
+            self.cols.contains(&see.col) ||
             self.ldiags.contains(&see.ldiag) ||
             self.rdiags.contains(&see.rdiag)
         )
     }
 }
 
-pub fn calc_squares() -> HashSet<Pos> {
-    let mut squares: HashSet<Pos> = HashSet::new();
+pub fn calc_squares() -> Vec<Pos> {
+    let mut squares: Vec<Pos> = vec![];
     for row in 0i8..(NUM_ROWS as i8) {
         for col in 0i8..(NUM_COLS as i8) {
             let pos: Pos = Pos(row, col);
-            squares.insert(pos);
+            squares.push(pos);
         }
     }
     squares
@@ -109,3 +107,24 @@ pub fn calc_sees() -> HashMap<Pos, See> {
     sees
 }
 
+pub fn calc_unattacked(squares: &[Pos], visited: &Visited, sees: &HashMap<Pos, See>) -> Vec<Pos> {
+    let mut unattacked: Vec<Pos> = vec![];
+    for pos in squares.iter() {
+        if let Some(see) = sees.get(pos) {
+            if visited.can_push(see) {
+                unattacked.push(*pos);
+            }
+        }
+    }
+    unattacked
+}
+
+pub fn can_cover(unattacked: &[Pos]) -> bool {
+    let mut rows: HashSet<i8> = HashSet::new();
+    let mut cols: HashSet<i8> = HashSet::new();
+    for pos in unattacked.iter() {
+        rows.insert(pos.0);
+        cols.insert(pos.1);
+    }
+    rows.len() == cols.len()
+}
